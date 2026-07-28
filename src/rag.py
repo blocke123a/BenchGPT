@@ -129,6 +129,8 @@ File: {chunk['metadata']['filename']}
     If the question is about offensive concepts, answer with respect to offense. If the question is about defensive concepts, answer with respect to defense.
     
     If multiple retrieved documents present different viewpoints, explain both.
+
+    Do not repeat phrases or sentences.
     
     Answer in 1-4 concise paragraphs.
     
@@ -155,7 +157,10 @@ def generate_answer(prompt):
                     "content": prompt
                 }
             ],
-            temperature=0.2
+            temperature=0.2,
+            max_tokens=500,
+            frequency_penalty=0.5,
+            presence_penalty=0.2
         )
         return response.choices[0].message.content
     except RateLimitError:

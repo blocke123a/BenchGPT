@@ -2,6 +2,37 @@ import streamlit as st
 
 from src.rag import ask
 
+def display_sources(chunks):
+
+    seen = set()
+
+    for source in chunks:
+
+        title = source["metadata"].get(
+            "title",
+            source["metadata"]["filename"]
+        )
+
+        url = source["metadata"].get("url")
+
+        if not url:
+            continue
+
+        key = url
+
+        if key in seen:
+            continue
+
+        seen.add(key)
+
+        st.markdown(
+            f"**📄 {title}**"
+        )
+
+        st.link_button(
+            "Open Source",
+            url
+        )
 
 # --------------------------------------------------
 # Page Config
@@ -44,7 +75,7 @@ It can answer questions about:
     st.write("📂 Categories: **5**")
     st.write("📄 Documents: **Curated Collection**")
     st.write("🧠 Embeddings: **BAAI/bge-small-en-v1.5**")
-    st.write("🤖 LLM: **llama-3.1-8b-instant**")
+    st.write("🤖 LLM: **Llama 3.3 via Groq**")
 
     st.divider()
 
@@ -139,56 +170,7 @@ for message in st.session_state.messages:
 
                 st.markdown("#### 📚 Sources")
 
-                for source in message["sources"]:
-
-                    title = source["metadata"].get(
-                        "title",
-                        source["metadata"]["filename"]
-                    )
-                    
-                    domain = source["metadata"].get("domain")
-                    
-                    category = source["metadata"]["category"]
-                    
-                    similarity = source["metadata"].get(
-                        "similarity",
-                        None
-                    )
-                    
-                    label = f"📄 {title}"
-                    
-                    if domain:
-                    
-                        label += f" — {domain}"
-
-                    with st.expander(label):
-
-                        if domain:
-
-                            st.write(f"**Source:** {domain}")
-                        
-                        st.write(
-                            f"**Category:** {category.title()}"
-                        )
-                        
-                        if similarity is not None:
-                        
-                            st.progress(min(similarity, 1.0))
-
-                            st.caption(
-                                f"Similarity score: {similarity:.3f}"
-                            )
-                        
-                        url = source["metadata"].get("url")
-                        
-                        if url:
-                        
-                            st.link_button(
-                                "Open original article",
-                                url
-                            )
-                        
-                        st.write(source["text"])
+                display_sources(message["sources"])
 
 
 # --------------------------------------------------
@@ -221,58 +203,10 @@ if question:
             answer, chunks = ask(question)
 
         st.markdown(answer)
-
+        
         st.markdown("#### 📚 Sources")
 
-        for source in chunks:
-
-            title = source["metadata"].get(
-                "title",
-                source["metadata"]["filename"]
-            )
-
-            domain = source["metadata"].get("domain")
-            
-            category = source["metadata"]["category"]
-
-            similarity = source["metadata"].get(
-                "similarity",
-                None
-            )
-
-            label = f"📄 {title}"
-
-            if domain:
-                label += f" — {domain}"
-
-            with st.expander(label):
-
-                if domain:
-
-                    st.write(f"**Source:** {domain}")
-                
-                st.write(
-                    f"**Category:** {category.title()}"
-                )
-                
-                if similarity is not None:
-                
-                    st.progress(min(similarity, 1.0))
-
-                    st.caption(
-                        f"Similarity score: {similarity:.3f}"
-                    )
-                
-                url = source["metadata"].get("url")
-                
-                if url:
-                
-                    st.link_button(
-                        "Open original article",
-                        url
-                    )
-                
-                st.write(source["text"])
+        display_sources(chunks)
 
     st.session_state.messages.append(
         {
