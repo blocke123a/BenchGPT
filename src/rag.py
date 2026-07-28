@@ -131,6 +131,8 @@ File: {chunk['metadata']['filename']}
     If multiple retrieved documents present different viewpoints, explain both.
 
     Do not repeat phrases or sentences.
+
+    When referencing retrieved information, mention the document name if useful, but do not refer to sources by number.
     
     Answer in 1-4 concise paragraphs.
     

@@ -8,17 +8,18 @@ def display_sources(chunks):
 
     for source in chunks:
 
-        title = source["metadata"].get(
+        metadata = source["metadata"]
+
+        title = metadata.get(
             "title",
-            source["metadata"]["filename"]
+            metadata.get("filename", "Unknown Source")
         )
 
-        url = source["metadata"].get("url")
+        url = metadata.get("url")
 
-        if not url:
-            continue
+        filename = metadata.get("filename")
 
-        key = url
+        key = url if url else filename
 
         if key in seen:
             continue
@@ -29,10 +30,18 @@ def display_sources(chunks):
             f"**📄 {title}**"
         )
 
-        st.link_button(
-            "Open Source",
-            url
-        )
+        if url:
+
+            st.link_button(
+                "Open Source",
+                url
+            )
+
+        else:
+
+            st.caption(
+                "Source document available in knowledge base"
+            )
 
 # --------------------------------------------------
 # Page Config
