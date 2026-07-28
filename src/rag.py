@@ -132,7 +132,7 @@ File: {chunk['metadata']['filename']}
 
     Do not repeat phrases or sentences.
 
-    When referencing retrieved information, mention the document name if useful, but do not refer to sources by number.
+    The retrieved documents are provided for context only. Never refer to them as "Source 1", "Source 2", etc. Do not mention source numbers in your answer. If attribution is useful, refer to the document title or simply explain the information naturally.    
     
     Answer in 1-4 concise paragraphs.
     
