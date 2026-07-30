@@ -72,8 +72,16 @@ It can answer questions about:
 - 📖 Rules
 - 📊 Analytics
 - 🧠 Strategy
-- 📝 Scouting
-- 🏆 NBA History
+- 📝 Scouting  (2022-26 drafts)
+- 🏆 NBA History  (select players, coaches, teams)
+
+### What it does not know
+
+- Current events
+- Content outside the indexed documents
+
+BenchGPT answers using retrieved basketball documents rather than relying solely on an LLM's training data.
+170+ documents were handpicked and web-scraped to provide verified answers.
 """
     )
 
@@ -110,7 +118,7 @@ st.title("🏀 BenchGPT")
 
 st.markdown(
 """
-Your basketball knowledge assistant.
+Your basketball knowledge assistant powered by Retrieval-Augmented Generation (RAG).
 
 Ask questions about:
 
@@ -119,8 +127,6 @@ Ask questions about:
 - Coaching Strategy
 - Scouting Reports
 - NBA History
-
-Powered by Retrieval-Augmented Generation (RAG).
 """
 )
 
@@ -212,10 +218,12 @@ if question:
             answer, chunks = ask(question)
 
         st.markdown(answer)
-        
-        st.markdown("#### 📚 Sources")
 
-        display_sources(chunks)
+        if chunks:
+        
+            st.markdown("#### 📚 Sources")
+    
+            display_sources(chunks)
 
     st.session_state.messages.append(
         {

@@ -3,6 +3,7 @@ RAG pipeline.
 """
 
 import os
+import re
 
 import streamlit as st
 from groq import Groq, RateLimitError
@@ -65,6 +66,10 @@ def retrieve(question, k=TOP_K):
 
     collection = get_collection()
 
+    question = question.lower().strip()
+
+    question = re.sub(r"[^\w\s]", "", question)
+
     query_embedding = model.encode(
         question,
         normalize_embeddings=True
@@ -72,15 +77,19 @@ def retrieve(question, k=TOP_K):
     
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=k
+        n_results=TOP_K,
+        include=["documents", "metadatas", "distances"]
     )
 
     retrieved = []
 
-    for document, metadata in zip(
+    for document, metadata, distance in zip(
         results["documents"][0],
-        results["metadatas"][0]
+        results["metadatas"][0],
+        results["distances"][0]
     ):
+
+        metadata["distance"] = distance
 
         retrieved.append(
             {
@@ -100,8 +109,6 @@ def build_prompt(question, chunks):
     for i, chunk in enumerate(chunks, start=1):
 
         context += f"""
-Source {i}
-
 Category: {chunk['metadata']['category']}
 File: {chunk['metadata']['filename']}
 
@@ -132,7 +139,11 @@ File: {chunk['metadata']['filename']}
 
     Do not repeat phrases or sentences.
 
-    The retrieved documents are provided for context only. Never refer to them as "Source 1", "Source 2", etc. Do not mention source numbers in your answer. If attribution is useful, refer to the document title or simply explain the information naturally.    
+    The retrieved documents are provided for context only. Do not name the sources in your response.
+
+    If the user asks time-sensitive questions like who won a recent game, do not answer from general world knowledge.
+
+    Instead, explain that BenchGPT uses a curated basketball knowledge base and cannot reliably answer questions requiring current or live information.    
     
     Answer in 1-4 concise paragraphs.
     
@@ -176,8 +187,23 @@ def generate_answer(prompt):
 def ask(question):
 
     chunks = retrieve(question)
+    print("\nTop retrieved chunks:")
+    for chunk in chunks:
+        print(
+            chunk["metadata"]["filename"],
+            chunk["metadata"].get("distance")
+        )
+
+    best_distance = chunks[0]["metadata"]["distance"]
+
+    if best_distance > 0.70:
+        return (
+            "I couldn't find enough relevant basketball information in my knowledge base to answer that question. Try asking about basketball rules, analytics, strategy, scouting, or NBA history.",
+            []
+        )
 
     prompt = build_prompt(question, chunks)
+    print(best_distance)
     print(f"Using model: {LLM_MODEL}")
     
     answer = generate_answer(prompt)
