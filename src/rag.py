@@ -139,13 +139,15 @@ File: {chunk['metadata']['filename']}
 
     Do not repeat phrases or sentences.
 
-    The retrieved documents are provided for context only. Do not name the sources in your response.
+    The retrieved documents are provided for context only. Do not name the documents in your response.
 
     If the user asks time-sensitive questions like who won a recent game, do not answer from general world knowledge.
 
     Instead, explain that BenchGPT uses a curated basketball knowledge base and cannot reliably answer questions requiring current or live information.    
     
     Answer in 1-4 concise paragraphs.
+
+    If the retrieved context is not relevant to the user's question, respond with ONLY: NO_RELEVANT_CONTEXT
     
     Retrieved Context:
     {context}
@@ -207,6 +209,12 @@ def ask(question):
     print(f"Using model: {LLM_MODEL}")
     
     answer = generate_answer(prompt)
+
+    if answer.strip() == "NO_RELEVANT_CONTEXT":
+        return (
+            "I couldn't find enough relevant basketball information in my knowledge base to answer that question. Try asking about basketball rules, analytics, strategy, scouting, or NBA history.",
+            []
+        )
 
     return answer, chunks
 

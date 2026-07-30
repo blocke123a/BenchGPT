@@ -181,10 +181,10 @@ for message in st.session_state.messages:
 
         if message["role"] == "assistant":
 
-            if "sources" in message:
+            if message.get("sources"):
 
                 st.markdown("#### 📚 Sources")
-
+            
                 display_sources(message["sources"])
 
 
