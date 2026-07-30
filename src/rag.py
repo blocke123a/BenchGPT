@@ -198,7 +198,7 @@ def ask(question):
 
     best_distance = chunks[0]["metadata"]["distance"]
 
-    if best_distance > 0.70:
+    if best_distance > 0.60:
         return (
             "I couldn't find enough relevant basketball information in my knowledge base to answer that question. Try asking about basketball rules, analytics, strategy, scouting, or NBA history.",
             []
