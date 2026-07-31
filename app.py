@@ -180,12 +180,12 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
         if message["role"] == "assistant":
-
-            if message.get("sources"):
-
-                st.markdown("#### 📚 Sources")
-            
-                display_sources(message["sources"])
+            if message.get("show_sources", True):
+                if message.get("sources"):
+    
+                    st.markdown("#### 📚 Sources")
+                
+                    display_sources(message["sources"])
 
 
 # --------------------------------------------------
@@ -215,11 +215,11 @@ if question:
 
         with st.spinner("Searching basketball knowledge base..."):
 
-            answer, chunks = ask(question)
+            answer, chunks, show_sources = ask(question)
 
         st.markdown(answer)
 
-        if chunks:
+        if show_sources and chunks:
         
             st.markdown("#### 📚 Sources")
     
@@ -229,7 +229,8 @@ if question:
         {
             "role": "assistant",
             "content": answer,
-            "sources": chunks
+            "sources": chunks,
+            "show_sources": show_sources
         }
     )
 

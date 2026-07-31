@@ -56,6 +56,8 @@ def get_collection():
 
         _collection = load_database()
 
+    print("Collection count:", _collection.count())
+
     return _collection
 
 
@@ -198,7 +200,7 @@ def ask(question):
 
     best_distance = chunks[0]["metadata"]["distance"]
 
-    if best_distance > 0.60:
+    if best_distance > 0.85:
         return (
             "I couldn't find enough relevant basketball information in my knowledge base to answer that question. Try asking about basketball rules, analytics, strategy, scouting, or NBA history.",
             []
@@ -213,8 +215,22 @@ def ask(question):
     if answer.strip() == "NO_RELEVANT_CONTEXT":
         return (
             "I couldn't find enough relevant basketball information in my knowledge base to answer that question. Try asking about basketball rules, analytics, strategy, scouting, or NBA history.",
-            []
+            [], False
         )
 
-    return answer, chunks
+    decline_phrases = [
+        "I couldn't find enough relevant basketball information",
+        "cannot reliably answer questions requiring current or live information",
+        "does not contain information about the most recent",
+        "additional information would be needed"
+    ]
+    
+    show_sources = True
+    
+    for phrase in decline_phrases:
+        if phrase.lower() in answer.lower():
+            show_sources = False
+            break
+
+    return answer, chunks, show_sources
 
