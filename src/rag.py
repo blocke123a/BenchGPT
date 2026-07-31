@@ -203,7 +203,7 @@ def ask(question):
     if best_distance > 0.85:
         return (
             "I couldn't find enough relevant basketball information in my knowledge base to answer that question. Try asking about basketball rules, analytics, strategy, scouting, or NBA history.",
-            []
+            [], False
         )
 
     prompt = build_prompt(question, chunks)
