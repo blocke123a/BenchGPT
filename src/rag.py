@@ -60,47 +60,133 @@ def get_collection():
 
     return _collection
 
+def extract_named_phrase(question: str) -> str | None:
+    """
+    Extract a likely multi-word proper name from the original question.
+
+    Examples:
+        "Scout Cooper Flagg" -> "Cooper Flagg"
+        "Tell me about Michael Jordan" -> "Michael Jordan"
+    """
+    matches = re.findall(
+        r"\b(?:[A-Z][a-zA-Z'.-]*)(?:\s+[A-Z][a-zA-Z'.-]*)+\b",
+        question
+    )
+
+    ignored_starts = {
+        "What Is",
+        "Tell Me",
+        "How Does",
+        "Who Was",
+        "Who Is",
+        "Explain The"
+    }
+
+    matches = [
+        match.strip()
+        for match in matches
+        if not any(
+            match.startswith(prefix)
+            for prefix in ignored_starts
+        )
+    ]
+
+    return max(matches, key=len) if matches else None
 
 # Retrieval
 def retrieve(question, k=TOP_K):
 
     model = get_embedding_model()
-
     collection = get_collection()
 
-    question = question.lower().strip()
+    original_question = question.strip()
 
-    question = re.sub(r"[^\w\s]", "", question)
+    normalized_question = original_question.lower()
+    normalized_question = re.sub(
+        r"[^\w\s]",
+        "",
+        normalized_question
+    )
+    normalized_question = " ".join(
+        normalized_question.split()
+    )
 
     query_embedding = model.encode(
-        question,
+        normalized_question,
         normalize_embeddings=True
     ).tolist()
-    
-    results = collection.query(
+
+    semantic_results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=TOP_K,
+        n_results=k,
         include=["documents", "metadatas", "distances"]
     )
 
     retrieved = []
+    seen = set()
 
-    for document, metadata, distance in zip(
-        results["documents"][0],
-        results["metadatas"][0],
-        results["distances"][0]
+    # Exact-name fallback
+    named_phrase = extract_named_phrase(original_question)
+
+    if named_phrase:
+
+        exact_results = collection.get(
+            where_document={
+                "$contains": named_phrase
+            },
+            limit=k,
+            include=["documents", "metadatas"]
+        )
+
+        for document, metadata, chunk_id in zip(
+            exact_results.get("documents", []),
+            exact_results.get("metadatas", []),
+            exact_results.get("ids", [])
+        ):
+
+            if chunk_id in seen:
+                continue
+
+            seen.add(chunk_id)
+
+            retrieved.append(
+                {
+                    "text": document,
+                    "metadata": {
+                        **metadata,
+                        # Exact text matches should pass the relevance gate.
+                        "distance": 0.0,
+                        "match_type": "exact"
+                    }
+                }
+            )
+
+    # Semantic results
+    for chunk_id, document, metadata, distance in zip(
+        semantic_results["ids"][0],
+        semantic_results["documents"][0],
+        semantic_results["metadatas"][0],
+        semantic_results["distances"][0]
     ):
 
-        metadata["distance"] = distance
+        if chunk_id in seen:
+            continue
+
+        seen.add(chunk_id)
 
         retrieved.append(
             {
                 "text": document,
-                "metadata": metadata
+                "metadata": {
+                    **metadata,
+                    "distance": distance,
+                    "match_type": "semantic"
+                }
             }
         )
 
-    return retrieved
+    # Preserve exact matches first, then nearest semantic matches.
+    return retrieved[:k]
 
 
 # Prompt Construction
@@ -143,9 +229,19 @@ File: {chunk['metadata']['filename']}
 
     The retrieved documents are provided for context only. Do not name the documents in your response.
 
-    If the user asks time-sensitive questions like who won a recent game, do not answer from general world knowledge.
-
-    Instead, explain that BenchGPT uses a curated basketball knowledge base and cannot reliably answer questions requiring current or live information.    
+    Treat a question as time-sensitive only when it explicitly asks for current,
+    latest, live, recent, or ongoing information, such as current standings,
+    recent game results, current rankings, injuries, trades, or the most recent
+    champion.
+    
+    A general question about a player, team, draft class, scouting report,
+    historical season, rule, statistic, or strategy is not automatically
+    time-sensitive. Answer those questions from the retrieved context whenever
+    the context supports an answer.
+    
+    For genuinely time-sensitive questions, do not use outside knowledge. Explain
+    that BenchGPT uses a static, curated knowledge base and cannot reliably provide
+    current or live information.   
     
     Answer in 1-4 concise paragraphs.
 
@@ -212,10 +308,12 @@ def ask(question):
     
     answer = generate_answer(prompt)
 
-    if answer.strip() == "NO_RELEVANT_CONTEXT":
+    if "NO_RELEVANT_CONTEXT" in answer:
         return (
-            "I couldn't find enough relevant basketball information in my knowledge base to answer that question. Try asking about basketball rules, analytics, strategy, scouting, or NBA history.",
-            [], False
+            "I couldn't find enough relevant basketball information in my knowledge base to answer that question. "
+            "Try asking about basketball rules, analytics, strategy, scouting, or NBA history.",
+            [],
+            False
         )
 
     decline_phrases = [
