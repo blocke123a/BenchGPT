@@ -27,6 +27,8 @@ Instead of relying only on the language model's internal knowledge, BenchGPT:
 
 ## Architecture
 
+User Question -> Streamlit Application -> Question Embedding -> ChromaDB Vector Search -> Relevant Basketball Documents -> Prompt Construction -> Groq-hosted LLM
+(Llama 3.1 8B Instant) -> Generated Response + Sources
 
 ## Technology Stack
 
@@ -73,19 +75,18 @@ Examples:
 
 ## 📝 Scouting
 Examples:
-- NBA draft scouting reports
-- Prospect evaluations
+- NBA draft scouting reports (2022-26)
 
 ## 🏆 NBA History
 Examples:
-- Player histories
-- Team histories
+- Player histories (NBA Top 75 Players)
+- Team histories (select historical teams)
 - Historical events
-
 
 ## Data Pipeline
 
 The project uses a multi-stage data pipeline:
+Raw Documents -> Document Processing -> Text Chunking -> Embedding Generation -> ChromaDB Vector Database -> RAG Application
 
 ### Document Processing
 
