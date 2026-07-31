@@ -148,7 +148,7 @@ If no sufficiently relevant basketball context is found, the system declines to 
 
 Example:
 
-> "Tell me about the planet Venus"
+> "Tell me about the planet Venus"  (which my friend used to break BenchGPT during development)
 
 Response:
 
@@ -202,7 +202,7 @@ These limitations are intentional design choices to reduce hallucinations and im
 ## 1. Clone Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/BenchGPT.git
+git clone https://github.com/blocke123a/BenchGPT.git
 
 cd BenchGPT
 
